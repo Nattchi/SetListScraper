@@ -11,13 +11,14 @@ from artistinfo import *
 
 
 def get_driver():
+    driver_path = '/app/.chromedriver/bin/chromedriver'
     chrome_options = Options()
     # ここにuser_agentからランダムで読み込み
     # chrome_options.add_argument('--user-agent=' + self.user_agent)
     chrome_options.add_argument('--headless')  # driver のウィンドウを表示しない
 
     driver = webdriver.Chrome(
-        options=chrome_options)
+        options=chrome_options, executable_path=driver_path)
     driver.implicitly_wait(5)
 
     return driver
