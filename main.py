@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from setlistscraper.database import Postgresql
+from setlistscraper.database import *
 from setlistscraper.scraper import Scraper
 
 if __name__ == '__main__':
-    db = Postgresql()
-    artists = db.get_artist()
+    db = SQLite3()
+    # artists = db.get_artist()
+    artists = ["`UVERworld`"]
 
     for artist in artists:
         scraper = Scraper(artist)

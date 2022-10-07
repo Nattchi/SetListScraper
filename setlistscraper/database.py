@@ -36,7 +36,7 @@ class Postgresql(DataBase):
 
 
 class SQLite3(DataBase):
-    def __init__(self, filepath_sqlite3):
+    def __init__(self, filepath_sqlite3="db.sqlite3"):
         if DataBase.connection is None:
             try:
                 DataBase.connection = sqlite3.connect(filepath_sqlite3)

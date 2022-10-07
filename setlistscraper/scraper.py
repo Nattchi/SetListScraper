@@ -1,24 +1,29 @@
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 import time
 import re
 import random
 from bs4 import BeautifulSoup
 
-from database import *
-from liveinfo import *
-from artistinfo import *
+from setlistscraper import database, liveinfo, artistinfo
 
 
 def get_driver():
-    driver_path = '/app/.chromedriver/bin/chromedriver'
+    # UAをいくつか格納しておく
+    user_agent = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 '
+        'Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 '
+        'Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 '
+        'Safari/537.36 '
+    ]
     chrome_options = Options()
-    # ここにuser_agentからランダムで読み込み
-    # chrome_options.add_argument('--user-agent=' + self.user_agent)
-    chrome_options.add_argument('--headless')  # driver のウィンドウを表示しない
-
-    driver = webdriver.Chrome(
-        options=chrome_options, executable_path=driver_path)
+    chrome_options.add_argument('--user-agent=' + user_agent[random.randrange(0, len(user_agent), 1)])
+    # chrome_options.add_argument('--headless')  # driver のウィンドウを表示しない
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     driver.implicitly_wait(5)
 
     return driver
@@ -30,10 +35,10 @@ class Scraper:
         self.domain = 'https://www.livefans.jp'
         self.user_agent = get_user_agent()
         self.driver = get_driver()
-        self.db = Postgresql()
+        self.db = database.SQLite3()
         self.bs = self.get_bs4_object(self.domain)
-        self.live_info = new_liveinfo_dict()
-        self.artist_info = ArtistInfo(artist)
+        self.live_info = liveinfo.new_liveinfo_dict()
+        self.artist_info = artistinfo.ArtistInfo(artist)
         self.result = dict()
 
     def renew_liveinfo(self):
@@ -166,7 +171,7 @@ class Scraper:
             self.artist_info.add_live_info(self.live_info)
             # self.artist_info[self.live_info["live_title"]] = self.live_info
 
-        store_db(self)
+        database.store_db(self)
 
     def load_info(self):
         isLoadInfo = False
