@@ -1,6 +1,7 @@
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import TimeoutException
 import time
 import re
 import random
@@ -109,12 +110,20 @@ class Scraper:
 
     def get_bs4_object(self, link=None):
         if link is not None:
-            self.driver.get(link)
+            while True:
+                try:
+                    self.driver.get(link)
+                    time.sleep(5)
+                except TimeoutException:
+                    continue
+                else:
+                    break
+
         page_source = self.driver.page_source
         return BeautifulSoup(page_source, 'html.parser')
 
     def set_liveinfo(self):
-        self.bs = self.get_bs4_object('https://www.livefans.jp/search?option=1&keyword=' + self.artist_info.artist
+        self.bs = self.get_bs4_object('https://www.livefans.jp/search?option=1&keyword=' + f'`{self.artist_info.artist}`'
                                       + '&genre=all&setlist=on&setlist=1&sort=e2')
         self.artist_info.artist_url = self.domain + \
             "/artists/" + self.artist_info.artist
@@ -169,9 +178,11 @@ class Scraper:
             # self.get_bs4_object()
             self.set_setlist()
             self.artist_info.add_live_info(self.live_info)
+
             # self.artist_info[self.live_info["live_title"]] = self.live_info
 
         database.store_db(self)
+        database.r2_upload(self)
 
     def load_info(self):
         isLoadInfo = False

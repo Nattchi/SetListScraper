@@ -1,7 +1,12 @@
 import sqlite3
+
+import boto3
 import psycopg
 import json
 import os
+
+import requests
+
 
 
 class DataBase(object):
@@ -51,6 +56,16 @@ class SQLite3(DataBase):
     # def __del__(self):
     #     self.connection.close()
 
+class R2(DataBase):
+    def __init__(self):
+        # R2のアクセスキーとシークレットキー,アカウントIDを設定
+        self.access_key = os.environ['AWS_ACCESS_KEY']
+        self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+        self.account_id = os.environ['AWS_ACCOUNT_ID']
+        self.connection = DataBase.connection
+        self.cursor = DataBase.cursor
+
+
 
 def store_db(scraper):
     print(scraper.artist_info.live_info_dict)
@@ -83,3 +98,57 @@ def update_db(scraper):
     event_url = scraper.db.cursor.execute(
         f'''SELECT url FROM {scraper.artist_info.artist}''').fetchall()
     print(set(event_url))
+
+
+def r2_upload(scraper, bucket_name=os.getenv('R2_BUCKET_NAME', ""), object_key=os.getenv('R2_OBJECT_KEY', "")):
+    """
+    :param scraper: Scraper object
+    :param bucket_name: upload先のbucket
+    :param object_key:  object_key
+    :return: void
+    """
+
+    # R2のアクセスキーとシークレットキー,アカウントIDを設定
+    access_key = os.environ['AWS_ACCESS_KEY']
+    secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+    account_id = os.environ['AWS_ACCOUNT_ID']
+
+    # R2のエンドポイントURLを設定
+    endpoint_url = f"https://{account_id}.r2.storageapi.net"
+
+    # AWSの認証情報を設定
+    # session = boto3.Session(
+    #     aws_access_key_id=access_key,
+    #     aws_secret_access_key=secret_key
+    # )
+    #
+    # # Cloudflare R2のAPIエンドポイントを設定
+    # cloudflare_r2 = session.client('r2',
+    #                                region_name='ap-northeast-1',
+    #                                endpoint_url=endpoint_url
+    #                                )
+    #
+
+    # データをJSON形式に変換
+    json_data = json.dumps(scraper.artist_info.__dict__)
+    print("JSON\n" + json_data)
+
+
+    if bucket_name == "":
+        bucket_name = "setlist-bucket"
+    if object_key == "":
+        object_key = f"live_info/{scraper.artist_info.artist}"
+
+    # # JSONデータをR2にアップロード
+    # # s3.put_object(Bucket=bucket_name, Key=object_key, Body=json_data)
+    # cloudflare_r2.get_waiter()
+
+    response = boto3.client('s3').put_object(
+        Body=json_data,
+        Bucket=bucket_name,
+        Key=f"{scraper.artist_info.artist}-setlist.json",
+    )
+
+    print("S3 Response\n" + response)
+    # boto3.client('s3').put_object(Bucket=bucket_name, Key=object_key, Body=json_data)
+
