@@ -130,7 +130,7 @@ def r2_upload(scraper, bucket_name=os.getenv('R2_BUCKET_NAME', ""), object_key=o
     #
 
     # データをJSON形式に変換
-    json_data = json.dumps(scraper.artist_info.__dict__)
+    json_data = json.dumps(scraper.artist_info.__dict__())
     print("JSON\n" + json_data)
 
 
